@@ -4,6 +4,7 @@ Create video game map as 3D object using real geographic data from open data sou
 
 ### TODO
 * interconnection between each section of road
+  * maybe use delaunay triangulation in thoses area
 * building generation
 * vegetation generation
 
