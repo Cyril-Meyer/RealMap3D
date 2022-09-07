@@ -139,3 +139,4 @@ data
 
 # Results Wavefront .obj files
 *.obj
+*.mtl
