@@ -19,6 +19,7 @@ parser.add_argument('--roads', type=str, default=None)
 parser.add_argument('--buildings', type=str, default=None)
 parser.add_argument('--elevation', type=str, default=None)
 parser.add_argument('--zmin', type=int, default=0)
+parser.add_argument('--debug', type=int, default=0)
 args = parser.parse_args()
 
 # for now (temporarily), both arguments are required
@@ -37,6 +38,7 @@ elif args.elevation is not None:
 
 # Read arguments
 z_min = args.zmin
+debug = args.debug
 
 # Read data
 roads = geopandas.read_file(args.roads)
@@ -77,27 +79,54 @@ for index, poi in roads.iterrows():
         orthogonal = y_dir, -x_dir
         orthogonal /= np.linalg.norm(orthogonal)
 
+        # add track vertices
         if v0 is None or v2 is None:
-            v0 = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT * 2, y1 - orthogonal[1] * ROAD_WIDTH)
-            v1 = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT * 2, y1 + orthogonal[1] * ROAD_WIDTH)
-            v0d = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH * 2, z1 - ROAD_HEIGHT * 2, y1 - orthogonal[1] * ROAD_WIDTH * 2)
-            v1d = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH * 2, z1 - ROAD_HEIGHT * 2, y1 + orthogonal[1] * ROAD_WIDTH * 2)
+            v0 = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 - orthogonal[1] * ROAD_WIDTH)
+            v1 = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 + orthogonal[1] * ROAD_WIDTH)
+            v0d = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH * 1.5, z1 - ROAD_HEIGHT * 3.0, y1 - orthogonal[1] * ROAD_WIDTH * 2)
+            v1d = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH * 1.5, z1 - ROAD_HEIGHT * 3.0, y1 + orthogonal[1] * ROAD_WIDTH * 2)
 
-        v2 = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT * 2, y2 + orthogonal[1] * ROAD_WIDTH)
-        v3 = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT * 2, y2 - orthogonal[1] * ROAD_WIDTH)
-        v2d = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH * 2, z2 - ROAD_HEIGHT * 2, y2 + orthogonal[1] * ROAD_WIDTH * 2)
-        v3d = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH * 2, z2 - ROAD_HEIGHT * 2, y2 - orthogonal[1] * ROAD_WIDTH * 2)
+        v2 = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 + orthogonal[1] * ROAD_WIDTH)
+        v3 = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 - orthogonal[1] * ROAD_WIDTH)
+        v2d = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH * 1.5, z2 - ROAD_HEIGHT * 3.0, y2 + orthogonal[1] * ROAD_WIDTH * 2)
+        v3d = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH * 1.5, z2 - ROAD_HEIGHT * 3.0, y2 - orthogonal[1] * ROAD_WIDTH * 2)
 
+        # track faces
         track.add_face(v3, v2, v1, v0)
+        # track border faces
         track.add_face(v1, v2, v2d, v1d)
         track.add_face(v3, v0, v0d, v3d)
 
+        # terrain vertices for better fitting
         terrain.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 - orthogonal[1] * ROAD_WIDTH)
         terrain.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 + orthogonal[1] * ROAD_WIDTH)
+
+        # todo: using vector now but not before is bad idea
+        p1 = np.array([x1, y1, z1])
+        p2 = np.array([x2, y2, z2])
+        direction = p2 - p1
+        direction_norm = np.linalg.norm(direction) / 10
+        direction /= direction_norm
+
+        p = p1
+        for i in range(1, math.floor(direction_norm)):
+            p = p1 + i * direction
+            terrain.add_vertex(p[0] + orthogonal[0] * ROAD_WIDTH, p[2] + ROAD_HEIGHT, p[1] + orthogonal[1] * ROAD_WIDTH)
+            terrain.add_vertex(p[0] - orthogonal[0] * ROAD_WIDTH, p[2] + ROAD_HEIGHT, p[1] - orthogonal[1] * ROAD_WIDTH)
+
         terrain.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 + orthogonal[1] * ROAD_WIDTH)
         terrain.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 - orthogonal[1] * ROAD_WIDTH)
 
 track.write('track.obj')
+
+if debug > 0:
+    points = pv.wrap(np.array(track.vertices))
+    surface = points.delaunay_2d()
+    # surface.flip_normals()
+    pl = pv.Plotter()
+    pl.add_mesh(surface)
+    pl.export_obj('track.obj')
+
 
 # Terrain
 print("generating terrain")
@@ -124,19 +153,18 @@ for x in range(0, x_shape - increment, increment):
 points = pv.wrap(np.array(terrain.vertices))
 surface = points.delaunay_2d()
 # surface.flip_normals()
-
 pl = pv.Plotter()
 pl.add_mesh(surface)
 pl.export_obj('terrain.obj')
-'''
-pl = pv.Plotter(shape=(1, 2))
-pl.add_mesh(points)
-pl.add_title('Point Cloud of 3D Surface')
-pl.subplot(0, 1)
-pl.add_mesh(surface, color=True, show_edges=True)
-pl.add_title('Reconstructed Surface')
-pl.show()
-'''
+
+if debug > 0:
+    pl = pv.Plotter(shape=(1, 2))
+    pl.add_mesh(points)
+    pl.add_title('Point Cloud of 3D Surface')
+    pl.subplot(0, 1)
+    pl.add_mesh(surface, color=True, show_edges=True)
+    pl.add_title('Reconstructed Surface')
+    pl.show()
 
 if buildings is None:
     exit(0)
