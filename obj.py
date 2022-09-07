@@ -13,8 +13,10 @@ class WavefrontOBJ:
             self.vertices_dict[(x, y, z)] = v
         return v
 
-    def add_face(self, v1, v2, v3, v4):
-        self.faces.append((v1, v2, v3, v4))
+    def add_face(self, v):
+        if len(v) < 3:
+            raise NotImplementedError
+        self.faces.append(v)
         return
 
     def write(self, filename):
@@ -22,5 +24,11 @@ class WavefrontOBJ:
             for vertex in self.vertices:
                 out.write(f'v {round(vertex[0], 4)} {round(vertex[1], 4)} {round(vertex[2], 4)}\n')
             for face in self.faces:
-                out.write(f'f {face[0]} {face[1]} {face[2]} {face[3]}\n')
+                if len(face) >= 3:
+                    out.write(f'f')
+                    for i in range(len(face)):
+                        out.write(f' {face[i]}')
+                    out.write('\n')
+                else:
+                    raise NotImplementedError
         return
