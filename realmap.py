@@ -93,10 +93,10 @@ for index, poi in roads.iterrows():
         v3d = track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH * 1.5, p2[2] - ROAD_HEIGHT * 3.0, p2[1] - orthogonal[1] * ROAD_WIDTH * 2)
 
         # track faces
-        track.add_face(v3, v2, v1, v0)
+        track.add_face([v3, v2, v1, v0])
         # track border faces
-        track.add_face(v1, v2, v2d, v1d)
-        track.add_face(v3, v0, v0d, v3d)
+        track.add_face([v1, v2, v2d, v1d])
+        track.add_face([v3, v0, v0d, v3d])
 
         # terrain vertices for better fitting
         terrain.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH, p1[2] + ROAD_HEIGHT, p1[1] - orthogonal[1] * ROAD_WIDTH)
@@ -144,7 +144,7 @@ for x in range(0, x_shape - increment, increment):
         v2 = terrain.add_vertex(vertex[0] - x_min, max(0, elevation_data[y+increment, x+increment] - z_min), vertex[1] - y_min)
         vertex = elevation.xy(y+increment, x)
         v3 = terrain.add_vertex(vertex[0] - x_min, max(0, elevation_data[y+increment, x] - z_min), vertex[1] - y_min)
-        terrain.add_face(v0, v1, v2, v3)
+        terrain.add_face([v0, v1, v2, v3])
 
 # terrain.write('terrain.obj')
 
@@ -169,33 +169,57 @@ if buildings is None:
 
 # Props
 print("generating props")
-props = obj.WavefrontOBJ()
+props_buildings = obj.WavefrontOBJ()
+props_buildings_roofs = obj.WavefrontOBJ()
 
 for index, poi in buildings.iterrows():
     building_coords = buildings.loc[index, 'geometry'].exterior.coords
-    for c in range(1, len(building_coords) - 1):
-        # previous point
-        x0, y0, z0 = building_coords[c - 1]
-        x0, y0, z0 = x0 - x_min, y0 - y_min, z0 - z_min
+    # first point
+    p0 = building_coords[0]
+    # central point of building
+    centroid_xy = np.array(buildings.loc[index, 'geometry'].bounds)
+    centroid_xy = centroid_xy[0] + (centroid_xy[2] - centroid_xy[0]) / 2,\
+                  centroid_xy[1] + (centroid_xy[3] - centroid_xy[1]) / 2
+    p_roof = np.array([centroid_xy[0], centroid_xy[1], p0[2] + 8]) - p_min
+
+    roof_vertices = props_buildings_roofs.add_vertex(p_roof[0], p_roof[2], p_roof[1])
+    p0 -= p_min
+    for c in range(0, len(building_coords) - 1):
         # current point
-        p1[0], p1[1], p1[2] = np.array(building_coords[c])
+        p1 = np.array(building_coords[c])
         p1 -= p_min
         # next point
-        p2[0], p2[1], p2[2] = np.array(building_coords[c + 1])
+        p2 = np.array(building_coords[c + 1])
         p2 -= p_min
 
-        v0 = props.add_vertex(p1[0], p1[2] - 2, p1[1])
-        v1 = props.add_vertex(p2[0], p1[2] - 2, p2[1])
-        v2 = props.add_vertex(p2[0], p2[2] + 6, p2[1])
-        v3 = props.add_vertex(p1[0], p2[2] + 6, p1[1])
-        props.add_face(v3, v2, v1, v0)
+        v0 = props_buildings.add_vertex(p1[0], p1[2] - 2, p1[1])
+        v1 = props_buildings.add_vertex(p2[0], p1[2] - 2, p2[1])
+        v2 = props_buildings.add_vertex(p2[0], p2[2] + 6, p2[1])
+        v3 = props_buildings.add_vertex(p1[0], p2[2] + 6, p1[1])
+        props_buildings.add_face([v3, v2, v1, v0])
+        props_buildings.add_face([v0, v1, v2, v3])
+        v2 = props_buildings_roofs.add_vertex(p2[0], p2[2] + 6, p2[1])
+        v3 = props_buildings_roofs.add_vertex(p1[0], p2[2] + 6, p1[1])
+        props_buildings_roofs.add_face([v2, roof_vertices, v3])
+        props_buildings_roofs.add_face([v3, roof_vertices, v2])
 
-        v0 = props.add_vertex(p1[0], p1[2] - 2, p1[1])
-        v1 = props.add_vertex(x0, p1[2] - 2, y0)
-        v2 = props.add_vertex(x0, z0 + 6, y0)
-        v3 = props.add_vertex(p1[0], z0 + 6, p1[1])
-        props.add_face(v3, v2, v1, v0)
+        # roof = props_buildings_roofs.add_vertex(p2[0], p2[2] + 6, p2[1])
+        # roof_vertices.append(roof)
 
-props.write('props.obj')
+    # connect first and last point
+    v0 = props_buildings.add_vertex(p0[0], p0[2] - 2, p0[1])
+    v1 = props_buildings.add_vertex(p2[0], p0[2] - 2, p2[1])
+    v2 = props_buildings.add_vertex(p2[0], p2[2] + 6, p2[1])
+    v3 = props_buildings.add_vertex(p0[0], p2[2] + 6, p0[1])
+    props_buildings.add_face([v3, v2, v1, v0])
+    props_buildings.add_face([v0, v1, v2, v3])
+
+    v0 = props_buildings_roofs.add_vertex(p0[0], p2[2] + 6, p0[1])
+    v1 = props_buildings_roofs.add_vertex(p2[0], p2[2] + 6, p2[1])
+    props_buildings_roofs.add_face([v0, roof_vertices, v1])
+    props_buildings_roofs.add_face([v1, roof_vertices, v0])
+
+props_buildings.write('props_buildings.obj')
+props_buildings_roofs.write('props_buildings_roofs.obj')
 
 exit(0)
