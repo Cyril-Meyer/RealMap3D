@@ -44,6 +44,7 @@ debug = args.debug
 roads = geopandas.read_file(args.roads)
 elevation = rasterio.open(args.elevation)
 x_min, y_min, x_max, y_max = elevation.bounds
+p_min = np.array([x_min, y_min, z_min])
 
 if str(roads.crs).upper() != str(elevation.crs).upper():
     raise NotImplementedError
@@ -68,28 +69,28 @@ for index, poi in roads.iterrows():
         v0, v1 = v3, v2
         v0d, v1d = v3d, v2d
         # current point
-        x1, y1, z1 = road_coords[c]
-        x1, y1, z1 = x1 - x_min, y1 - y_min, z1 - z_min
+        p1 = np.array(road_coords[c])
+        p1 -= p_min
         # next point
-        x2, y2, z2 = road_coords[c + 1]
-        x2, y2, z2 = x2 - x_min, y2 - y_min, z2 - z_min
+        p2 = np.array(road_coords[c + 1])
+        p2 -= p_min
         # direction
-        x_dir, y_dir, z_dir = x2 - x1, y2 - y1, z2 - z1
+        dir = p2 - p1
         # normalized orthogonal vector to direction
-        orthogonal = y_dir, -x_dir
+        orthogonal = dir[1], -dir[0]
         orthogonal /= np.linalg.norm(orthogonal)
 
         # add track vertices
         if v0 is None or v2 is None:
-            v0 = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 - orthogonal[1] * ROAD_WIDTH)
-            v1 = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 + orthogonal[1] * ROAD_WIDTH)
-            v0d = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH * 1.5, z1 - ROAD_HEIGHT * 3.0, y1 - orthogonal[1] * ROAD_WIDTH * 2)
-            v1d = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH * 1.5, z1 - ROAD_HEIGHT * 3.0, y1 + orthogonal[1] * ROAD_WIDTH * 2)
+            v0 = track.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH, p1[2] + ROAD_HEIGHT, p1[1] - orthogonal[1] * ROAD_WIDTH)
+            v1 = track.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH, p1[2] + ROAD_HEIGHT, p1[1] + orthogonal[1] * ROAD_WIDTH)
+            v0d = track.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH * 1.5, p1[2] - ROAD_HEIGHT * 3.0, p1[1] - orthogonal[1] * ROAD_WIDTH * 2)
+            v1d = track.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH * 1.5, p1[2] - ROAD_HEIGHT * 3.0, p1[1] + orthogonal[1] * ROAD_WIDTH * 2)
 
-        v2 = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 + orthogonal[1] * ROAD_WIDTH)
-        v3 = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 - orthogonal[1] * ROAD_WIDTH)
-        v2d = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH * 1.5, z2 - ROAD_HEIGHT * 3.0, y2 + orthogonal[1] * ROAD_WIDTH * 2)
-        v3d = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH * 1.5, z2 - ROAD_HEIGHT * 3.0, y2 - orthogonal[1] * ROAD_WIDTH * 2)
+        v2 = track.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH, p2[2] + ROAD_HEIGHT, p2[1] + orthogonal[1] * ROAD_WIDTH)
+        v3 = track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH, p2[2] + ROAD_HEIGHT, p2[1] - orthogonal[1] * ROAD_WIDTH)
+        v2d = track.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH * 1.5, p2[2] - ROAD_HEIGHT * 3.0, p2[1] + orthogonal[1] * ROAD_WIDTH * 2)
+        v3d = track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH * 1.5, p2[2] - ROAD_HEIGHT * 3.0, p2[1] - orthogonal[1] * ROAD_WIDTH * 2)
 
         # track faces
         track.add_face(v3, v2, v1, v0)
@@ -98,12 +99,9 @@ for index, poi in roads.iterrows():
         track.add_face(v3, v0, v0d, v3d)
 
         # terrain vertices for better fitting
-        terrain.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 - orthogonal[1] * ROAD_WIDTH)
-        terrain.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 + orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH, p1[2] + ROAD_HEIGHT, p1[1] - orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH, p1[2] + ROAD_HEIGHT, p1[1] + orthogonal[1] * ROAD_WIDTH)
 
-        # todo: using vector now but not before is bad idea
-        p1 = np.array([x1, y1, z1])
-        p2 = np.array([x2, y2, z2])
         direction = p2 - p1
         direction_norm = np.linalg.norm(direction) / 10
         direction /= direction_norm
@@ -114,8 +112,8 @@ for index, poi in roads.iterrows():
             terrain.add_vertex(p[0] + orthogonal[0] * ROAD_WIDTH, p[2] + ROAD_HEIGHT, p[1] + orthogonal[1] * ROAD_WIDTH)
             terrain.add_vertex(p[0] - orthogonal[0] * ROAD_WIDTH, p[2] + ROAD_HEIGHT, p[1] - orthogonal[1] * ROAD_WIDTH)
 
-        terrain.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 + orthogonal[1] * ROAD_WIDTH)
-        terrain.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 - orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH, p2[2] + ROAD_HEIGHT, p2[1] + orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH, p2[2] + ROAD_HEIGHT, p2[1] - orthogonal[1] * ROAD_WIDTH)
 
 track.write('track.obj')
 
@@ -180,22 +178,22 @@ for index, poi in buildings.iterrows():
         x0, y0, z0 = building_coords[c - 1]
         x0, y0, z0 = x0 - x_min, y0 - y_min, z0 - z_min
         # current point
-        x1, y1, z1 = building_coords[c]
-        x1, y1, z1 = x1 - x_min, y1 - y_min, z1 - z_min
+        p1[0], p1[1], p1[2] = np.array(building_coords[c])
+        p1 -= p_min
         # next point
-        x2, y2, z2 = building_coords[c + 1]
-        x2, y2, z2 = x2 - x_min, y2 - y_min, z2 - z_min
+        p2[0], p2[1], p2[2] = np.array(building_coords[c + 1])
+        p2 -= p_min
 
-        v0 = props.add_vertex(x1, z1 - 2, y1)
-        v1 = props.add_vertex(x2, z1 - 2, y2)
-        v2 = props.add_vertex(x2, z2 + 6, y2)
-        v3 = props.add_vertex(x1, z2 + 6, y1)
+        v0 = props.add_vertex(p1[0], p1[2] - 2, p1[1])
+        v1 = props.add_vertex(p2[0], p1[2] - 2, p2[1])
+        v2 = props.add_vertex(p2[0], p2[2] + 6, p2[1])
+        v3 = props.add_vertex(p1[0], p2[2] + 6, p1[1])
         props.add_face(v3, v2, v1, v0)
 
-        v0 = props.add_vertex(x1, z1 - 2, y1)
-        v1 = props.add_vertex(x0, z1 - 2, y0)
+        v0 = props.add_vertex(p1[0], p1[2] - 2, p1[1])
+        v1 = props.add_vertex(x0, p1[2] - 2, y0)
         v2 = props.add_vertex(x0, z0 + 6, y0)
-        v3 = props.add_vertex(x1, z0 + 6, y1)
+        v3 = props.add_vertex(p1[0], z0 + 6, p1[1])
         props.add_face(v3, v2, v1, v0)
 
 props.write('props.obj')
