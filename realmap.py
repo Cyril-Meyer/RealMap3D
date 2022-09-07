@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 import geopandas
 import rasterio
 import rasterio.plot
+import pyvista as pv
 
 import obj
 
 ROAD_WIDTH = 7.0
+ROAD_HEIGHT = 0.5
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -50,13 +52,17 @@ if args.buildings is not None:
     if str(roads.crs).upper() != str(buildings.crs).upper():
         raise NotImplementedError
 
+track = obj.WavefrontOBJ()
+terrain = obj.WavefrontOBJ()
+
 # Track
 print("generating track")
-track = obj.WavefrontOBJ()
 
 for index, poi in roads.iterrows():
     road_coords = roads.loc[index, 'geometry'].coords
+    v0, v1, v2, v3 = None, None, None, None
     for c in range(len(road_coords) - 1):
+        v0, v1 = v3, v2
         # current point
         x1, y1, z1 = road_coords[c]
         x1, y1, z1 = x1 - x_min, y1 - y_min, z1 - z_min
@@ -71,17 +77,23 @@ for index, poi in roads.iterrows():
         # track width
         orthogonal *= 5
 
-        v0 = track.add_vertex(x1 - orthogonal[0], z1, y1 - orthogonal[1])
-        v1 = track.add_vertex(x1 + orthogonal[0], z1, y1 + orthogonal[1])
-        v2 = track.add_vertex(x2 + orthogonal[0], z2, y2 + orthogonal[1])
-        v3 = track.add_vertex(x2 - orthogonal[0], z2, y2 - orthogonal[1])
+        if v0 is None or v2 is None:
+            v0 = track.add_vertex(x1 - orthogonal[0], z1 + ROAD_HEIGHT, y1 - orthogonal[1])
+            v1 = track.add_vertex(x1 + orthogonal[0], z1 + ROAD_HEIGHT, y1 + orthogonal[1])
+
+        v2 = track.add_vertex(x2 + orthogonal[0], z2 + ROAD_HEIGHT, y2 + orthogonal[1])
+        v3 = track.add_vertex(x2 - orthogonal[0], z2 + ROAD_HEIGHT, y2 - orthogonal[1])
         track.add_face(v3, v2, v1, v0)
+
+        terrain.add_vertex(x1 - orthogonal[0], z1 + ROAD_HEIGHT, y1 - orthogonal[1])
+        terrain.add_vertex(x1 + orthogonal[0], z1 + ROAD_HEIGHT, y1 + orthogonal[1])
+        terrain.add_vertex(x2 + orthogonal[0], z2 + ROAD_HEIGHT, y2 + orthogonal[1])
+        terrain.add_vertex(x2 - orthogonal[0], z2 + ROAD_HEIGHT, y2 - orthogonal[1])
 
 track.write('track.obj')
 
 # Terrain
 print("generating terrain")
-terrain = obj.WavefrontOBJ()
 
 elevation_data = elevation.read(1)
 y_shape, x_shape = elevation_data.shape
@@ -100,7 +112,24 @@ for x in range(0, x_shape - increment, increment):
         v3 = terrain.add_vertex(vertex[0] - x_min, max(0, elevation_data[y+increment, x] - z_min), vertex[1] - y_min)
         terrain.add_face(v0, v1, v2, v3)
 
-terrain.write('terrain.obj')
+# terrain.write('terrain.obj')
+
+points = pv.wrap(np.array(terrain.vertices))
+surface = points.delaunay_2d()
+# surface.flip_normals()
+
+pl = pv.Plotter()
+pl.add_mesh(surface)
+pl.export_obj('terrain.obj')
+'''
+pl = pv.Plotter(shape=(1, 2))
+pl.add_mesh(points)
+pl.add_title('Point Cloud of 3D Surface')
+pl.subplot(0, 1)
+pl.add_mesh(surface, color=True, show_edges=True)
+pl.add_title('Reconstructed Surface')
+pl.show()
+'''
 
 if buildings is None:
     exit(0)
