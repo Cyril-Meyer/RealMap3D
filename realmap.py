@@ -10,7 +10,7 @@ import pyvista as pv
 
 import obj
 
-ROAD_WIDTH = 7.0
+ROAD_WIDTH = 4.0
 ROAD_HEIGHT = 0.5
 
 # Parse arguments
@@ -61,8 +61,10 @@ print("generating track")
 for index, poi in roads.iterrows():
     road_coords = roads.loc[index, 'geometry'].coords
     v0, v1, v2, v3 = None, None, None, None
+    v0d, v1d, v2d, v3d = None, None, None, None
     for c in range(len(road_coords) - 1):
         v0, v1 = v3, v2
+        v0d, v1d = v3d, v2d
         # current point
         x1, y1, z1 = road_coords[c]
         x1, y1, z1 = x1 - x_min, y1 - y_min, z1 - z_min
@@ -74,21 +76,26 @@ for index, poi in roads.iterrows():
         # normalized orthogonal vector to direction
         orthogonal = y_dir, -x_dir
         orthogonal /= np.linalg.norm(orthogonal)
-        # track width
-        orthogonal *= 5
 
         if v0 is None or v2 is None:
-            v0 = track.add_vertex(x1 - orthogonal[0], z1 + ROAD_HEIGHT, y1 - orthogonal[1])
-            v1 = track.add_vertex(x1 + orthogonal[0], z1 + ROAD_HEIGHT, y1 + orthogonal[1])
+            v0 = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT * 2, y1 - orthogonal[1] * ROAD_WIDTH)
+            v1 = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT * 2, y1 + orthogonal[1] * ROAD_WIDTH)
+            v0d = track.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH * 2, z1 - ROAD_HEIGHT * 2, y1 - orthogonal[1] * ROAD_WIDTH * 2)
+            v1d = track.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH * 2, z1 - ROAD_HEIGHT * 2, y1 + orthogonal[1] * ROAD_WIDTH * 2)
 
-        v2 = track.add_vertex(x2 + orthogonal[0], z2 + ROAD_HEIGHT, y2 + orthogonal[1])
-        v3 = track.add_vertex(x2 - orthogonal[0], z2 + ROAD_HEIGHT, y2 - orthogonal[1])
+        v2 = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT * 2, y2 + orthogonal[1] * ROAD_WIDTH)
+        v3 = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT * 2, y2 - orthogonal[1] * ROAD_WIDTH)
+        v2d = track.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH * 2, z2 - ROAD_HEIGHT * 2, y2 + orthogonal[1] * ROAD_WIDTH * 2)
+        v3d = track.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH * 2, z2 - ROAD_HEIGHT * 2, y2 - orthogonal[1] * ROAD_WIDTH * 2)
+
         track.add_face(v3, v2, v1, v0)
+        track.add_face(v1, v2, v2d, v1d)
+        track.add_face(v3, v0, v0d, v3d)
 
-        terrain.add_vertex(x1 - orthogonal[0], z1 + ROAD_HEIGHT, y1 - orthogonal[1])
-        terrain.add_vertex(x1 + orthogonal[0], z1 + ROAD_HEIGHT, y1 + orthogonal[1])
-        terrain.add_vertex(x2 + orthogonal[0], z2 + ROAD_HEIGHT, y2 + orthogonal[1])
-        terrain.add_vertex(x2 - orthogonal[0], z2 + ROAD_HEIGHT, y2 - orthogonal[1])
+        terrain.add_vertex(x1 - orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 - orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(x1 + orthogonal[0] * ROAD_WIDTH, z1 + ROAD_HEIGHT, y1 + orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(x2 + orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 + orthogonal[1] * ROAD_WIDTH)
+        terrain.add_vertex(x2 - orthogonal[0] * ROAD_WIDTH, z2 + ROAD_HEIGHT, y2 - orthogonal[1] * ROAD_WIDTH)
 
 track.write('track.obj')
 
