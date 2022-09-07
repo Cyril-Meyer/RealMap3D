@@ -3,11 +3,13 @@
 Create video game map as 3D object using real geographic data from open data sources.
 
 ### TODO
-* better fit between terrain and track
 * interconnection between each section of road
-* smooth road elevation change
 * building generation
 * vegetation generation
+
+*need improvement*
+* better fit between terrain and track
+  * maybe create a hole under the road to avoid slow down
 
 ### How to use RealMap3D
 
