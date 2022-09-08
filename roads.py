@@ -2,7 +2,7 @@ import math
 import numpy as np
 import obj
 
-ROAD_WIDTH = 4.0
+ROAD_WIDTH = 4.5
 ROAD_HEIGHT = 0.5
 
 
@@ -51,12 +51,12 @@ class Roads:
                     v1 = self.track.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH,
                                                p1[2] + ROAD_HEIGHT,
                                                p1[1] + orthogonal[1] * ROAD_WIDTH)
-                    v0d = self.track.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH * 1.5,
+                    v0d = self.track.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH * 2.0,
                                                 p1[2] - ROAD_HEIGHT * 3.0,
-                                                p1[1] - orthogonal[1] * ROAD_WIDTH * 2)
-                    v1d = self.track.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH * 1.5,
+                                                p1[1] - orthogonal[1] * ROAD_WIDTH * 2.0)
+                    v1d = self.track.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH * 2.0,
                                                 p1[2] - ROAD_HEIGHT * 3.0,
-                                                p1[1] + orthogonal[1] * ROAD_WIDTH * 2)
+                                                p1[1] + orthogonal[1] * ROAD_WIDTH * 2.0)
 
                 v2 = self.track.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH,
                                            p2[2] + ROAD_HEIGHT,
@@ -64,12 +64,12 @@ class Roads:
                 v3 = self.track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH,
                                            p2[2] + ROAD_HEIGHT,
                                            p2[1] - orthogonal[1] * ROAD_WIDTH)
-                v2d = self.track.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH * 1.5,
+                v2d = self.track.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH * 2.0,
                                             p2[2] - ROAD_HEIGHT * 3.0,
-                                            p2[1] + orthogonal[1] * ROAD_WIDTH * 2)
-                v3d = self.track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH * 1.5,
+                                            p2[1] + orthogonal[1] * ROAD_WIDTH * 2.0)
+                v3d = self.track.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH * 2.0,
                                             p2[2] - ROAD_HEIGHT * 3.0,
-                                            p2[1] - orthogonal[1] * ROAD_WIDTH * 2)
+                                            p2[1] - orthogonal[1] * ROAD_WIDTH * 2.0)
 
                 # track faces
                 self.track.add_face([v3, v2, v1, v0])
@@ -79,10 +79,10 @@ class Roads:
 
                 # terrain vertices for better fitting
                 self.terrain.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH,
-                                        p1[2] + ROAD_HEIGHT,
+                                        p1[2] + ROAD_HEIGHT * 0.25,
                                         p1[1] - orthogonal[1] * ROAD_WIDTH)
                 self.terrain.add_vertex(p1[0] + orthogonal[0] * ROAD_WIDTH,
-                                        p1[2] + ROAD_HEIGHT,
+                                        p1[2] + ROAD_HEIGHT * 0.25,
                                         p1[1] + orthogonal[1] * ROAD_WIDTH)
 
                 direction = p2 - p1
@@ -93,15 +93,15 @@ class Roads:
                 for i in range(1, math.floor(direction_norm)):
                     p = p1 + i * direction
                     self.terrain.add_vertex(p[0] + orthogonal[0] * ROAD_WIDTH,
-                                            p[2] + ROAD_HEIGHT,
+                                            p[2] + ROAD_HEIGHT * 0.5,
                                             p[1] + orthogonal[1] * ROAD_WIDTH)
                     self.terrain.add_vertex(p[0] - orthogonal[0] * ROAD_WIDTH,
-                                            p[2] + ROAD_HEIGHT,
+                                            p[2] + ROAD_HEIGHT * 0.5,
                                             p[1] - orthogonal[1] * ROAD_WIDTH)
 
                 self.terrain.add_vertex(p2[0] + orthogonal[0] * ROAD_WIDTH,
-                                        p2[2] + ROAD_HEIGHT,
+                                        p2[2] + ROAD_HEIGHT * 0.5,
                                         p2[1] + orthogonal[1] * ROAD_WIDTH)
                 self.terrain.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH,
-                                        p2[2] + ROAD_HEIGHT,
+                                        p2[2] + ROAD_HEIGHT * 0.5,
                                         p2[1] - orthogonal[1] * ROAD_WIDTH)
