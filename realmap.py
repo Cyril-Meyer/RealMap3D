@@ -61,6 +61,7 @@ terrain = obj.WavefrontOBJ()
 print("generating track")
 roads_object = r.Roads(p_min, track, terrain)
 roads_object.add(roads_gis)
+roads_object.export_track_connections('tracks_ends.obj')
 track.write('track.obj')
 
 # Terrain

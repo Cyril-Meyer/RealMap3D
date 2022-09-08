@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pyvista as pv
 import obj
 
 ROAD_WIDTH = 3.5
@@ -11,6 +12,7 @@ class Roads:
         self.p_min = p_min
         self.track = track
         self.terrain = terrain
+        self.ends = RoadsEnds()
 
         if self.track is None:
             self.track = obj.WavefrontOBJ()
@@ -18,6 +20,10 @@ class Roads:
             self.terrain = obj.WavefrontOBJ()
 
     def get_track(self):
+        return self.track
+
+    def export_track_connections(self, filename):
+        self.ends.merge(filename)
         return self.track
 
     def get_terrain(self):
@@ -77,6 +83,26 @@ class Roads:
                 self.track.add_face([v1, v2, v2d, v1d])
                 self.track.add_face([v3, v0, v0d, v3d])
 
+                # track segment ends
+                if c == 0:
+                    # add first part as an end
+                    pe1 = [p1[0] - orthogonal[0] * ROAD_WIDTH,
+                           p1[2] + ROAD_HEIGHT,
+                           p1[1] - orthogonal[1] * ROAD_WIDTH]
+                    pe2 = [p1[0] + orthogonal[0] * ROAD_WIDTH,
+                           p1[2] + ROAD_HEIGHT,
+                           p1[1] + orthogonal[1] * ROAD_WIDTH]
+                    self.ends.add_end(p1[0], p1[2], p1[1], [pe1, pe2])
+                if c == len(road_coords) - 2:
+                    # add last part as an end
+                    pe1 = [p2[0] - orthogonal[0] * ROAD_WIDTH,
+                           p2[2] + ROAD_HEIGHT,
+                           p2[1] - orthogonal[1] * ROAD_WIDTH]
+                    pe2 = [p2[0] + orthogonal[0] * ROAD_WIDTH,
+                           p2[2] + ROAD_HEIGHT,
+                           p2[1] + orthogonal[1] * ROAD_WIDTH]
+                    self.ends.add_end(p2[0], p2[2], p2[1], [pe1, pe2])
+
                 # terrain vertices for better fitting
                 self.terrain.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH,
                                         p1[2] + ROAD_HEIGHT * 0.25,
@@ -105,3 +131,33 @@ class Roads:
                 self.terrain.add_vertex(p2[0] - orthogonal[0] * ROAD_WIDTH,
                                         p2[2] + ROAD_HEIGHT * 0.5,
                                         p2[1] - orthogonal[1] * ROAD_WIDTH)
+
+
+class RoadsEnds:
+    def __init__(self):
+        self.ends = []
+        self.ends_dict = {}
+
+    def add_end(self, x, y, z, ends_points):
+        v = self.ends_dict.get((x, y, z))
+        if v is None:
+            self.ends.append([])
+            v = len(self.ends)
+            self.ends_dict[(x, y, z)] = v
+
+        for end_point in ends_points:
+            self.ends[v-1].append(end_point)
+
+    def merge(self, filename):
+        pl = pv.Plotter()
+        for i in range(len(self.ends)):
+            if len(self.ends[i]) > 3:
+                points = pv.wrap(np.array(self.ends[i]))
+                surface = points.delaunay_2d()
+                '''
+                if surface.n_faces > 0:
+                    surface.flip_normals()
+                    pl.add_mesh(surface)
+                '''
+                pl.add_mesh(surface)
+        pl.export_obj(f'{filename}')
