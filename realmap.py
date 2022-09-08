@@ -17,6 +17,7 @@ ROAD_HEIGHT = 0.5
 parser = argparse.ArgumentParser()
 parser.add_argument('--roads', type=str, default=None)
 parser.add_argument('--buildings', type=str, default=None)
+parser.add_argument('--buildings-attr-height', type=str, default=None)
 parser.add_argument('--elevation', type=str, default=None)
 parser.add_argument('--zmin', type=int, default=0)
 parser.add_argument('--debug', type=int, default=0)
@@ -37,6 +38,7 @@ elif args.elevation is not None:
     raise FileNotFoundError
 
 # Read arguments
+buildings_attr_height = args.buildings_attr_height
 z_min = args.zmin
 debug = args.debug
 
@@ -173,16 +175,24 @@ props_buildings = obj.WavefrontOBJ()
 props_buildings_roofs = obj.WavefrontOBJ()
 
 for index, poi in buildings.iterrows():
+    # building height
+    building_height = 2
+    if buildings_attr_height is not None:
+        building_height = buildings.loc[index, f'{buildings_attr_height}']
+    building_height = max(building_height, 2)
+    # building polygon
     building_coords = buildings.loc[index, 'geometry'].exterior.coords
+
+    building_z = building_coords[0][2] - p_min[2]
     # first point
     p0 = building_coords[0]
     # central point of building
     centroid_xy = np.array(buildings.loc[index, 'geometry'].bounds)
     centroid_xy = centroid_xy[0] + (centroid_xy[2] - centroid_xy[0]) / 2,\
                   centroid_xy[1] + (centroid_xy[3] - centroid_xy[1]) / 2
-    p_roof = np.array([centroid_xy[0], centroid_xy[1], p0[2] + 8]) - p_min
+    p_roof = np.array([centroid_xy[0], centroid_xy[1], 0]) - p_min
 
-    roof_vertices = props_buildings_roofs.add_vertex(p_roof[0], p_roof[2], p_roof[1])
+    roof_vertices = props_buildings_roofs.add_vertex(p_roof[0], building_z + building_height + (building_height / 5), p_roof[1])
     p0 -= p_min
     for c in range(0, len(building_coords) - 1):
         # current point
@@ -192,14 +202,14 @@ for index, poi in buildings.iterrows():
         p2 = np.array(building_coords[c + 1])
         p2 -= p_min
 
-        v0 = props_buildings.add_vertex(p1[0], p1[2] - 2, p1[1])
-        v1 = props_buildings.add_vertex(p2[0], p1[2] - 2, p2[1])
-        v2 = props_buildings.add_vertex(p2[0], p2[2] + 6, p2[1])
-        v3 = props_buildings.add_vertex(p1[0], p2[2] + 6, p1[1])
+        v0 = props_buildings.add_vertex(p1[0], building_z - 2, p1[1])
+        v1 = props_buildings.add_vertex(p2[0], building_z - 2, p2[1])
+        v2 = props_buildings.add_vertex(p2[0], building_z + building_height, p2[1])
+        v3 = props_buildings.add_vertex(p1[0], building_z + building_height, p1[1])
         props_buildings.add_face([v3, v2, v1, v0])
         props_buildings.add_face([v0, v1, v2, v3])
-        v2 = props_buildings_roofs.add_vertex(p2[0], p2[2] + 6, p2[1])
-        v3 = props_buildings_roofs.add_vertex(p1[0], p2[2] + 6, p1[1])
+        v2 = props_buildings_roofs.add_vertex(p2[0], building_z + building_height, p2[1])
+        v3 = props_buildings_roofs.add_vertex(p1[0], building_z + building_height, p1[1])
         props_buildings_roofs.add_face([v2, roof_vertices, v3])
         props_buildings_roofs.add_face([v3, roof_vertices, v2])
 
@@ -207,15 +217,15 @@ for index, poi in buildings.iterrows():
         # roof_vertices.append(roof)
 
     # connect first and last point
-    v0 = props_buildings.add_vertex(p0[0], p0[2] - 2, p0[1])
-    v1 = props_buildings.add_vertex(p2[0], p0[2] - 2, p2[1])
-    v2 = props_buildings.add_vertex(p2[0], p2[2] + 6, p2[1])
-    v3 = props_buildings.add_vertex(p0[0], p2[2] + 6, p0[1])
+    v0 = props_buildings.add_vertex(p0[0], building_z - 2, p0[1])
+    v1 = props_buildings.add_vertex(p2[0], building_z - 2, p2[1])
+    v2 = props_buildings.add_vertex(p2[0], building_z + building_height, p2[1])
+    v3 = props_buildings.add_vertex(p0[0], building_z + building_height, p0[1])
     props_buildings.add_face([v3, v2, v1, v0])
     props_buildings.add_face([v0, v1, v2, v3])
 
-    v0 = props_buildings_roofs.add_vertex(p0[0], p2[2] + 6, p0[1])
-    v1 = props_buildings_roofs.add_vertex(p2[0], p2[2] + 6, p2[1])
+    v0 = props_buildings_roofs.add_vertex(p0[0], building_z + building_height, p0[1])
+    v1 = props_buildings_roofs.add_vertex(p2[0], building_z + building_height, p2[1])
     props_buildings_roofs.add_face([v0, roof_vertices, v1])
     props_buildings_roofs.add_face([v1, roof_vertices, v0])
 
