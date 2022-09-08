@@ -67,7 +67,7 @@ track.write('track.obj')
 print("generating terrain")
 terrain_object = t.Terrain(p_min, terrain)
 terrain_object.add(elevation_gis)
-t.export(terrain, debug=bool(debug))
+t.export(terrain, debug=bool(debug), flip_normals=True)
 
 if buildings_gis is None:
     exit(0)

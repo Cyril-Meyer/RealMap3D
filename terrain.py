@@ -46,10 +46,11 @@ class Terrain:
                 # self.terrain.add_face([v0, v1, v2, v3])
 
 
-def export(terrain, filename='terrain.obj', debug=False):
+def export(terrain, filename='terrain.obj', debug=False, flip_normals=False):
     points = pv.wrap(np.array(terrain.vertices))
     surface = points.delaunay_2d()
-    # surface.flip_normals()
+    if flip_normals:
+        surface.flip_normals()
     pl = pv.Plotter()
     pl.add_mesh(surface)
     pl.export_obj(filename)

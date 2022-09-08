@@ -2,7 +2,7 @@ import math
 import numpy as np
 import obj
 
-ROAD_WIDTH = 4.5
+ROAD_WIDTH = 3.5
 ROAD_HEIGHT = 0.5
 
 
