@@ -2,15 +2,20 @@
 
 Create video game map as 3D object using real geographic data from open data sources.
 
+**What was it made for ?**  
+This project has a direct use for me for creating maps on
+[Art of Rally](https://artofrally.com/).
+
 ### TODO
 * interconnection between each section of road
   * maybe use delaunay triangulation in thoses area
-* building generation
 * vegetation generation
 
 *need improvement*
 * better fit between terrain and track
-  * maybe create a hole under the road to avoid slow down
+* building generation
+  * use less polygon
+* X-axis seems to be inverted
 
 ### How to use RealMap3D
 
@@ -46,5 +51,8 @@ python realmap.py --roads roads.shp --elevation alti.tif --buildings buildings.s
 
 ### Acknowledgment
 
-If you like this project, you may be interested in
-[RealMap](https://github.com/Yt-trium/RealMap)
+If you like this project, you may be interested in one of the following:
+* [RealMap](https://github.com/Yt-trium/RealMap)
+* [ArtOfRallyTK](https://github.com/Cyril-Meyer/ArtOfRallyTK)
+* [ArtOfRallyFFFMap](https://github.com/Cyril-Meyer/ArtOfRallyFFFMap)
+* [ArtOfRallyCATransmission](https://github.com/Cyril-Meyer/ArtOfRallyCATransmission)
