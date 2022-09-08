@@ -6,17 +6,19 @@ Create video game map as 3D object using real geographic data from open data sou
 This project has a direct use for me for creating maps on
 [Art of Rally](https://artofrally.com/).
 
+This is a work in progress, you may have to make changes in the code to make it
+work for you.
+
 ### TODO
-* interconnection between each section of road
-  * maybe use delaunay triangulation in thoses area
 * vegetation generation
 
 *need improvement*
+* X-axis seems to be inverted
 * better fit between terrain and track
 * building generation
   * use less polygon
-* X-axis seems to be inverted
-
+* interconnection between each section of road
+  
 ### How to use RealMap3D
 
 #### 1. Prepare the data
@@ -48,6 +50,11 @@ python realmap.py --roads roads.shp --elevation alti.tif --buildings buildings.s
   * [BD TOPO®](https://geoservices.ign.fr/bdtopo) (vector description of infrastructure)
   * [RGE ALTI®](https://geoservices.ign.fr/rgealti) (high resolution altitude map)  
   * [BD ALTI®](https://geoservices.ign.fr/bdalti) (medium resolution altitude map)
+
+### FAQ
+
+* The faces of the object are in the wrong direction
+  * You may check the flip_normals() function
 
 ### Acknowledgment
 
