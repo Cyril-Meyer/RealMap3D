@@ -10,10 +10,11 @@ This is a work in progress, you may have to make changes in the code to make it
 work for you.
 
 ### TODO
-* vegetation generation
+* add material support for obj
 
 *need improvement*
 * X-axis seems to be inverted
+* better vegetation generation
 * better fit between terrain and track
 * building generation
   * use less polygon
@@ -26,8 +27,9 @@ work for you.
 Download the data for the area you want to process
 (see [open data sources](#open-data-sources)).
 * altitude / elevation map (GeoTIFF)
-* roads map (Shapefile)
-* buildings map (Shapefile)
+* roads map (Shapefile of lines)
+* buildings map (Shapefile of polygons)
+* vegetation map (Shapefile of polygons)
 
 The altitude map must cover all the area of the infrastructure maps.
 
@@ -35,13 +37,28 @@ Using a geographic information system (like [QGis](https://www.qgis.org/)):
 * remove the unwanted data from the infrastructure maps
 * cut the altitude map to the infrastructure area (raster > extraction)
 * use drape to assign the Z value for each point of the infrastructure maps
-
+* For the vegetation
+  * convert vegetation map into points (generate random points in polygons)
+  * remove "on road" trees (select by distance)
 
 #### 2. Convert the data to 3D object using RealMap3D
 
-Example
+Example minimal
 ```
-python realmap.py --roads roads.shp --elevation alti.tif --buildings buildings.shp --zmin 10
+python realmap.py --elevation alti.tif --roads roads.shp --zmin 10
+```
+Example with more options
+```
+python realmap.py
+--elevation data/TEST_03/ALTI.tif
+--roads data/TEST_03/ROADS.shp
+--buildings data/TEST_03/BUILDINGS.shp
+--buildings-attr-height HAUTEUR
+--vegetation data/TEST_03/VEGETATION_POINTS.shp
+--zmin 220
+--terrain-res 64
+--terrain-flip-normals 1
+--invert-x 1
 ```
 
 ### Open data sources
