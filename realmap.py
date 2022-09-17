@@ -21,6 +21,7 @@ parser.add_argument('--vegetation', type=str, default=None)
 parser.add_argument('--terrain-res', type=int, default=128)
 parser.add_argument('--terrain-flip-normals', type=int, default=0)
 parser.add_argument('--zmin', type=int, default=0)
+parser.add_argument('--invert-x', type=int, default=0)
 parser.add_argument('--debug', type=int, default=0)
 args = parser.parse_args()
 
@@ -44,12 +45,18 @@ z_min = args.zmin
 debug = args.debug
 terrain_res = args.terrain_res
 terrain_flip_normals = bool(args.terrain_flip_normals)
+invert_x = bool(args.invert_x)
 
 # Read data
 roads_gis = geopandas.read_file(args.roads)
 elevation_gis = rasterio.open(args.elevation)
 x_min, y_min, x_max, y_max = elevation_gis.bounds
 p_min = np.array([x_min, y_min, z_min])
+
+if invert_x:
+    invert_x = x_max - x_min
+else:
+    invert_x = 0
 
 if str(roads_gis.crs).upper() != str(elevation_gis.crs).upper():
     raise NotImplementedError
@@ -66,14 +73,14 @@ if args.vegetation is not None:
     if str(roads_gis.crs).upper() != str(vegetation_gis.crs).upper():
         raise NotImplementedError
 
-track = obj.WavefrontOBJ()
-terrain = obj.WavefrontOBJ()
+track = obj.WavefrontOBJ(invert_x=invert_x)
+terrain = obj.WavefrontOBJ(invert_x=invert_x)
 
 # Track
 print("generating track")
 roads_object = r.Roads(p_min, track, terrain)
 roads_object.add(roads_gis)
-roads_object.export_track_connections('tracks_ends.obj')
+roads_object.export_track_connections('tracks_ends.obj', invert_x=invert_x)
 track.write('track.obj')
 
 # Terrain
@@ -85,8 +92,8 @@ t.export(terrain, debug=bool(debug), flip_normals=terrain_flip_normals)
 if buildings_gis is not None:
     # Buildings
     print("generating buildings")
-    buildings = obj.WavefrontOBJ()
-    buildings_roofs = obj.WavefrontOBJ()
+    buildings = obj.WavefrontOBJ(invert_x=invert_x)
+    buildings_roofs = obj.WavefrontOBJ(invert_x=invert_x)
     buildings_object = b.Buildings(p_min, buildings, buildings_roofs)
     buildings_object.add(buildings_gis, buildings_attr_height)
     buildings.write('buildings.obj')
@@ -95,8 +102,8 @@ if buildings_gis is not None:
 if vegetation_gis is not None:
     # Trees
     print("generating trees")
-    tree_trunks = obj.WavefrontOBJ()
-    tree_leaves = obj.WavefrontOBJ()
+    tree_trunks = obj.WavefrontOBJ(invert_x=invert_x)
+    tree_leaves = obj.WavefrontOBJ(invert_x=invert_x)
     trees_object = v.Tree(p_min, tree_trunks, tree_leaves)
     trees_object.add(vegetation_gis)
     tree_trunks.write('trees_trunks.obj')

@@ -1,11 +1,14 @@
 class WavefrontOBJ:
-    def __init__(self):
+    def __init__(self, invert_x=0):
         self.vertices = []
         self.faces = []
         self.vertices_dict = {}
+        self.invert_x = invert_x
         return
 
     def add_vertex(self, x, y, z):
+        if self.invert_x != 0:
+            x = -x + self.invert_x
         v = self.vertices_dict.get((x, y, z))
         if v is None:
             self.vertices.append((x, y, z))
@@ -16,7 +19,10 @@ class WavefrontOBJ:
     def add_face(self, v):
         if len(v) < 3:
             raise NotImplementedError
-        self.faces.append(v)
+        if self.invert_x != 0:
+            self.faces.append(v[::-1])
+        else:
+            self.faces.append(v)
         return
 
     def write(self, filename):

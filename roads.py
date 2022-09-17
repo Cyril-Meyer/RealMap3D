@@ -23,8 +23,8 @@ class Roads:
     def get_track(self):
         return self.track
 
-    def export_track_connections(self, filename):
-        self.ends.merge(filename)
+    def export_track_connections(self, filename, invert_x=0):
+        self.ends.merge(filename, invert_x)
         return self.track
 
     def get_terrain(self):
@@ -149,10 +149,12 @@ class RoadsEnds:
         for end_point in ends_points:
             self.ends[v-1].append(end_point)
 
-    def merge(self, filename):
+    def merge(self, filename, invert_x):
         pl = pv.Plotter()
         for i in range(len(self.ends)):
             if len(self.ends[i]) > 3:
+                if invert_x != 0:
+                    self.ends[i] = np.array(self.ends[i])[:] * [-1, 1, 1] + (invert_x, 0, 0)
                 points = pv.wrap(np.array(self.ends[i]))
                 surface = points.delaunay_2d()
                 '''
