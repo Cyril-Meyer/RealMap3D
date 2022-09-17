@@ -5,9 +5,10 @@ import obj
 
 
 class Terrain:
-    def __init__(self, p_min, terrain=None):
+    def __init__(self, p_min, terrain=None, resolution=128):
         self.p_min = p_min
         self.terrain = terrain
+        self.resolution = resolution
         
         if self.terrain is None:
             self.terrain = obj.WavefrontOBJ()
@@ -19,7 +20,7 @@ class Terrain:
         elevation_data = elevation.read(1)
         y_shape, x_shape = elevation_data.shape
         area = x_shape * y_shape
-        increment = int(math.sqrt(area) // 128)
+        increment = int(math.sqrt(area) // self.resolution)
 
         for x in range(0, x_shape - increment, increment):
             for y in range(0, y_shape - increment, increment):

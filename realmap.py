@@ -9,13 +9,17 @@ import obj
 import roads as r
 import terrain as t
 import buildings as b
+import vegetation as v
 
 # Parse arguments
 parser = argparse.ArgumentParser()
+parser.add_argument('--elevation', type=str, default=None)
 parser.add_argument('--roads', type=str, default=None)
 parser.add_argument('--buildings', type=str, default=None)
 parser.add_argument('--buildings-attr-height', type=str, default=None)
-parser.add_argument('--elevation', type=str, default=None)
+parser.add_argument('--vegetation', type=str, default=None)
+parser.add_argument('--terrain-res', type=int, default=128)
+parser.add_argument('--terrain-flip-normals', type=int, default=0)
 parser.add_argument('--zmin', type=int, default=0)
 parser.add_argument('--debug', type=int, default=0)
 args = parser.parse_args()
@@ -38,6 +42,8 @@ elif args.elevation is not None:
 buildings_attr_height = args.buildings_attr_height
 z_min = args.zmin
 debug = args.debug
+terrain_res = args.terrain_res
+terrain_flip_normals = bool(args.terrain_flip_normals)
 
 # Read data
 roads_gis = geopandas.read_file(args.roads)
@@ -54,6 +60,12 @@ if args.buildings is not None:
     if str(roads_gis.crs).upper() != str(buildings_gis.crs).upper():
         raise NotImplementedError
 
+vegetation_gis = None
+if args.vegetation is not None:
+    vegetation_gis = geopandas.read_file(args.vegetation)
+    if str(roads_gis.crs).upper() != str(vegetation_gis.crs).upper():
+        raise NotImplementedError
+
 track = obj.WavefrontOBJ()
 terrain = obj.WavefrontOBJ()
 
@@ -66,20 +78,28 @@ track.write('track.obj')
 
 # Terrain
 print("generating terrain")
-terrain_object = t.Terrain(p_min, terrain)
+terrain_object = t.Terrain(p_min, terrain=terrain, resolution=terrain_res)
 terrain_object.add(elevation_gis)
-t.export(terrain, debug=bool(debug), flip_normals=True)
+t.export(terrain, debug=bool(debug), flip_normals=terrain_flip_normals)
 
-if buildings_gis is None:
-    exit(0)
+if buildings_gis is not None:
+    # Buildings
+    print("generating buildings")
+    buildings = obj.WavefrontOBJ()
+    buildings_roofs = obj.WavefrontOBJ()
+    buildings_object = b.Buildings(p_min, buildings, buildings_roofs)
+    buildings_object.add(buildings_gis, buildings_attr_height)
+    buildings.write('buildings.obj')
+    buildings_roofs.write('buildings_roofs.obj')
 
-# Props
-print("generating props")
-props_buildings = obj.WavefrontOBJ()
-props_buildings_roofs = obj.WavefrontOBJ()
-buildings_object = b.Buildings(p_min, props_buildings, props_buildings_roofs)
-buildings_object.add(buildings_gis, buildings_attr_height)
-props_buildings.write('props_buildings.obj')
-props_buildings_roofs.write('props_buildings_roofs.obj')
+if vegetation_gis is not None:
+    # Trees
+    print("generating trees")
+    tree_trunks = obj.WavefrontOBJ()
+    tree_leaves = obj.WavefrontOBJ()
+    trees_object = v.Tree(p_min, tree_trunks, tree_leaves)
+    trees_object.add(vegetation_gis)
+    tree_trunks.write('trees_trunks.obj')
+    tree_leaves.write('trees_leaves.obj')
 
 exit(0)

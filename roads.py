@@ -8,11 +8,12 @@ ROAD_HEIGHT = 0.5
 
 
 class Roads:
-    def __init__(self, p_min, track=None, terrain=None):
+    def __init__(self, p_min, track=None, terrain=None, terrain_precision=2):
         self.p_min = p_min
         self.track = track
         self.terrain = terrain
         self.ends = RoadsEnds()
+        self.terrain_precision = terrain_precision
 
         if self.track is None:
             self.track = obj.WavefrontOBJ()
@@ -116,7 +117,7 @@ class Roads:
                 direction /= direction_norm
 
                 p = p1
-                for i in range(1, math.floor(direction_norm)):
+                for i in range(1, math.floor(direction_norm), self.terrain_precision):
                     p = p1 + i * direction
                     self.terrain.add_vertex(p[0] + orthogonal[0] * ROAD_WIDTH,
                                             p[2] + ROAD_HEIGHT * 0.5,
