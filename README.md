@@ -10,10 +10,8 @@ This is a work in progress, you may have to make changes in the code to make it
 work for you.
 
 ### TODO
-* add material support for obj
 
 *need improvement*
-* X-axis seems to be inverted
 * better vegetation generation
 * better fit between terrain and track
 * building generation
