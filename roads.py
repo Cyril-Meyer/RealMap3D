@@ -151,6 +151,7 @@ class RoadsEnds:
 
     def merge(self, filename, invert_x):
         pl = pv.Plotter()
+        meshes = pv.PolyData()
         for i in range(len(self.ends)):
             if len(self.ends[i]) > 3:
                 if invert_x != 0:
@@ -162,5 +163,7 @@ class RoadsEnds:
                     surface.flip_normals()
                     pl.add_mesh(surface)
                 '''
-                pl.add_mesh(surface)
+                meshes = meshes.merge(surface)
+                # pl.add_mesh(surface)
+        pl.add_mesh(meshes)
         pl.export_obj(f'{filename}')
