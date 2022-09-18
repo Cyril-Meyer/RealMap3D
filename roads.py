@@ -12,7 +12,7 @@ class Roads:
         self.p_min = p_min
         self.track = track
         self.terrain = terrain
-        self.ends = RoadsEnds()
+        self.crossings = RoadsCrossings()
         self.terrain_precision = terrain_precision
 
         if self.track is None:
@@ -24,13 +24,25 @@ class Roads:
         return self.track
 
     def export_track_connections(self, filename, invert_x=0):
-        self.ends.merge(filename, invert_x)
+        self.crossings.merge(filename, invert_x)
         return self.track
 
     def get_terrain(self):
         return self.terrain
 
-    def add(self, roads):
+    def add(self, roads, connection=1):
+        if connection == 0:
+            raise NotImplementedError
+        elif connection == 1:
+            self.add_c1(roads)
+        elif connection == 2:
+            self.add_c2(roads)
+
+    def add_c2(self, roads):
+        raise NotImplementedError
+
+    def add_c1(self, roads):
+        # may be safer than add_c1
         for index, poi in roads.iterrows():
             road_coords = roads.loc[index, 'geometry'].coords
             v0, v1, v2, v3 = None, None, None, None
@@ -84,25 +96,25 @@ class Roads:
                 self.track.add_face([v1, v2, v2d, v1d])
                 self.track.add_face([v3, v0, v0d, v3d])
 
-                # track segment ends
+                # track segment crossings
                 if c == 0:
-                    # add first part as an end
+                    # add first part as a crossing
                     pe1 = [p1[0] - orthogonal[0] * ROAD_WIDTH,
                            p1[2] + ROAD_HEIGHT,
                            p1[1] - orthogonal[1] * ROAD_WIDTH]
                     pe2 = [p1[0] + orthogonal[0] * ROAD_WIDTH,
                            p1[2] + ROAD_HEIGHT,
                            p1[1] + orthogonal[1] * ROAD_WIDTH]
-                    self.ends.add_end(p1[0], p1[2], p1[1], [pe1, pe2])
+                    self.crossings.add_crossing(p1[0], p1[2], p1[1], [pe1, pe2])
                 if c == len(road_coords) - 2:
-                    # add last part as an end
+                    # add last part as a crossing
                     pe1 = [p2[0] - orthogonal[0] * ROAD_WIDTH,
                            p2[2] + ROAD_HEIGHT,
                            p2[1] - orthogonal[1] * ROAD_WIDTH]
                     pe2 = [p2[0] + orthogonal[0] * ROAD_WIDTH,
                            p2[2] + ROAD_HEIGHT,
                            p2[1] + orthogonal[1] * ROAD_WIDTH]
-                    self.ends.add_end(p2[0], p2[2], p2[1], [pe1, pe2])
+                    self.crossings.add_crossing(p2[0], p2[2], p2[1], [pe1, pe2])
 
                 # terrain vertices for better fitting
                 self.terrain.add_vertex(p1[0] - orthogonal[0] * ROAD_WIDTH,
@@ -134,29 +146,29 @@ class Roads:
                                         p2[1] - orthogonal[1] * ROAD_WIDTH)
 
 
-class RoadsEnds:
+class RoadsCrossings:
     def __init__(self):
-        self.ends = []
-        self.ends_dict = {}
+        self.crossings = []
+        self.crossings_dict = {}
 
-    def add_end(self, x, y, z, ends_points):
-        v = self.ends_dict.get((x, y, z))
+    def add_crossing(self, x, y, z, crossings_points):
+        v = self.crossings_dict.get((x, y, z))
         if v is None:
-            self.ends.append([])
-            v = len(self.ends)
-            self.ends_dict[(x, y, z)] = v
+            self.crossings.append([])
+            v = len(self.crossings)
+            self.crossings_dict[(x, y, z)] = v
 
-        for end_point in ends_points:
-            self.ends[v-1].append(end_point)
+        for crossing_point in crossings_points:
+            self.crossings[v-1].append(crossing_point)
 
     def merge(self, filename, invert_x):
         pl = pv.Plotter()
         meshes = pv.PolyData()
-        for i in range(len(self.ends)):
-            if len(self.ends[i]) > 3:
+        for i in range(len(self.crossings)):
+            if len(self.crossings[i]) > 3:
                 if invert_x != 0:
-                    self.ends[i] = np.array(self.ends[i])[:] * [-1, 1, 1] + (invert_x, 0, 0)
-                points = pv.wrap(np.array(self.ends[i]))
+                    self.crossings[i] = np.array(self.crossings[i])[:] * [-1, 1, 1] + (invert_x, 0, 0)
+                points = pv.wrap(np.array(self.crossings[i]))
                 surface = points.delaunay_2d()
                 '''
                 if surface.n_faces > 0:
