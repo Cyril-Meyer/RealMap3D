@@ -1,3 +1,7 @@
+import numpy as np
+import pyvista as pv
+
+
 class WavefrontOBJ:
     def __init__(self, invert_x=0):
         self.vertices = []
@@ -43,3 +47,22 @@ class WavefrontOBJ:
                 else:
                     raise NotImplementedError
         return
+
+
+def export_reconstruction(object, filename='object.obj', debug=False, flip_normals=False):
+    points = pv.wrap(np.array(object.vertices))
+    surface = points.delaunay_2d()
+    if flip_normals:
+        surface.flip_normals()
+    pl = pv.Plotter()
+    pl.add_mesh(surface)
+    pl.export_obj(filename)
+
+    if debug:
+        pl = pv.Plotter(shape=(1, 2))
+        pl.add_mesh(points)
+        pl.add_title('Point Cloud of 3D Surface')
+        pl.subplot(0, 1)
+        pl.add_mesh(surface, color=True, show_edges=True)
+        pl.add_title('Reconstructed Surface')
+        pl.show()

@@ -78,16 +78,17 @@ terrain = obj.WavefrontOBJ(invert_x=invert_x)
 
 # Track
 print("generating track")
-roads_object = r.Roads(p_min, track, terrain)
-roads_object.add(roads_gis)
+roads_object = r.Roads(p_min, track, terrain, invert_x=invert_x)
+roads_object.add_terrain(roads_gis)
+roads_object.add_roads(roads_gis)
+roads_object.export_track('track.obj')
 roads_object.export_track_connections('tracks_ends.obj', invert_x=invert_x)
-track.write('track.obj')
 
 # Terrain
 print("generating terrain")
 terrain_object = t.Terrain(p_min, terrain=terrain, resolution=terrain_res)
 terrain_object.add(elevation_gis)
-t.export(terrain, debug=bool(debug), flip_normals=terrain_flip_normals)
+obj.export_reconstruction(terrain, filename='terrain.obj', debug=bool(debug), flip_normals=terrain_flip_normals)
 
 if buildings_gis is not None:
     # Buildings

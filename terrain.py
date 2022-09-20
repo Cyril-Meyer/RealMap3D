@@ -1,6 +1,4 @@
 import math
-import numpy as np
-import pyvista as pv
 import obj
 
 
@@ -45,22 +43,3 @@ class Terrain:
                                              vertex[1] - self.p_min[1])
 
                 # self.terrain.add_face([v0, v1, v2, v3])
-
-
-def export(terrain, filename='terrain.obj', debug=False, flip_normals=False):
-    points = pv.wrap(np.array(terrain.vertices))
-    surface = points.delaunay_2d()
-    if flip_normals:
-        surface.flip_normals()
-    pl = pv.Plotter()
-    pl.add_mesh(surface)
-    pl.export_obj(filename)
-
-    if debug:
-        pl = pv.Plotter(shape=(1, 2))
-        pl.add_mesh(points)
-        pl.add_title('Point Cloud of 3D Surface')
-        pl.subplot(0, 1)
-        pl.add_mesh(surface, color=True, show_edges=True)
-        pl.add_title('Reconstructed Surface')
-        pl.show()
