@@ -23,7 +23,7 @@ class WavefrontOBJ:
     def add_vertices(self, vertices):
         for v in vertices:
             assert len(v) == 3
-            return self.add_vertex(v[0], v[1], v[2])
+            self.add_vertex(v[0], v[1], v[2])
 
     def add_face(self, v):
         if len(v) < 3:
