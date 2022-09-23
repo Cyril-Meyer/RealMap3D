@@ -10,13 +10,20 @@ This is a work in progress, you may have to make changes in the code to make it
 work for you.
 
 ### TODO
+* better road generation
+  * use alti elevation instead of Z coordinate of the Shapefile
+  * non flat road
+* better fit between terrain and track
+  * use points for elevation map
+  * more points around track
 
 *need improvement*
 * better vegetation generation
 * better fit between terrain and track
 * building generation
   * use less polygon
-* interconnection between each section of road
+* better interconnection between each section of road
+* code refactoring to make it more readable
   
 ### How to use RealMap3D
 
