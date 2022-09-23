@@ -24,7 +24,11 @@ work for you.
   * use less polygon
 * better interconnection between each section of road
 * code refactoring to make it more readable
-  
+
+### Older versions
+You might be interested in older versions, less complex or even more stable.
+* [RealMap3D 1.0 (a1a0958419b69c5be5983db6398b5afa362e05d8)](https://github.com/Cyril-Meyer/RealMap3D/tree/a1a0958419b69c5be5983db6398b5afa362e05d8)
+
 ### How to use RealMap3D
 
 #### 1. Prepare the data
